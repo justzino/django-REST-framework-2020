@@ -11,21 +11,24 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import json
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(BASE_DIR, 'secrets.json'), 'rb') as secret_file:
+    secrets = json.load(secret_file)
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'bqkbvbjk_32-hsy7o*r9=dc29^x4vt6y@*v$v-9n+qmu9wfsoa'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['webdjangodb.ckqjgytp9qpy.ap-northeast-2.rds.amazonaws.com']
 
 
 # Application definition
@@ -37,8 +40,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api.apps.ApiConfig',
 ]
+
+INSTALLED_APPS += [
+    'api.apps.ApiConfig',
+    'phonenumber_field',
+    'rest_framework',
+    'django_filters',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
+    'DEFAULT_PERMISSION_CLASSES': [     # 기본 권한 추가: 실제로는 로그인한 사용자만 API에 엑세스 할 수 있도록 다양한 권한 설정
+        'rest_framework.permissions.AllowAny'   # 모든 사람에게 API 개방 (로컬에서 실행할 때만!!)
+    ]
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,13 +91,12 @@ WSGI_APPLICATION = 'api_server.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 # DB 세팅을 위해 수정해야 할 부분 (default가 sqlite3)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+DATABASES = secrets['DB_SETTINGS']
 
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = ['SECRET_KEY']
+
+AUTH_USER_MODEL = 'api.User'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -113,7 +128,9 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False      # True: 장고 내부적으로 시간대를 인식/ False: TIME_ZONE 을 참고하여 local time 사용
+
+PHONENUMBER_DEFAULT_REGION = 'KR'       # PhoneNumber library 에서 number 지역 설정
 
 
 # Static files (CSS, JavaScript, Images)
